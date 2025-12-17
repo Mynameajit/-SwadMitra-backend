@@ -19,8 +19,8 @@ console.log("ENV CHECK:", process.env.RAZORPAY_KEY_ID); // DEBUG
 //middlewares
 app.use(express.json())
 app.use(cors({
-  origin: "http://localhost:5173", // ✅ your frontend URL
-  credentials: true,               // ✅ allow cookies or tokens
+  origin: "http://localhost:5173",
+  credentials: true,              
 }));
 app.use(cookieParser())
 
