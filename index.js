@@ -10,6 +10,7 @@ import ShopRoute from './routes/shop.Route.js'
 import ItemRoute from './routes/item.Route.js'
 import CartRoute from './routes/cart.Route.js'
 import CreateOrder from './routes/payment.Routes.js'
+import OrderRoute from './routes/order.Route.js'
 
 
 dotenv.config();
@@ -19,7 +20,7 @@ console.log("ENV CHECK:", process.env.RAZORPAY_KEY_ID); // DEBUG
 //middlewares
 app.use(express.json())
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: process.env.FRONTEND_URL,
   credentials: true,              
 }));
 app.use(cookieParser())
@@ -32,6 +33,7 @@ app.use('/api/shop', ShopRoute)
 app.use('/api/item', ItemRoute)
 app.use('/api/cart', CartRoute)
 app.use("/api/payment", CreateOrder)
+app.use("/api/order", OrderRoute)
 
 
 

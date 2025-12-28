@@ -5,14 +5,14 @@ import { setToken } from "../utils/setToken.js";
 
 export const SignUp = async (req, res) => {
     try {
-        
+
         const { fullName, email, password, mobileNumber, role } = req.body;
         const user = await User.findOne({ email })
         if (user) {
             return res.status(400).json({ message: "User already exists", success: false })
         }
 
-        const hashpasword =  bcrypt.hashSync(password, 10)
+        const hashpasword = await bcrypt.hashSync(password, 10)
         if (!hashpasword) {
             return res.status(500).json({ message: "Password hashing failed", success: false })
         }
@@ -47,7 +47,7 @@ export const Signin = async (req, res) => {
             return res.status(400).json({ message: "User not found", success: false })
         }
 
-        const isPassword = bcrypt.compare(password, user.password)
+        const isPassword = await bcrypt.compare(password, user.password)
 
         if (!isPassword) {
             return res.status(400).json({ message: "Invalid credentials", success: false })

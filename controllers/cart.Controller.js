@@ -3,7 +3,7 @@ import Cart from "../models/cart.Models.js"
 export const AddItemToCart = async (req, res) => {
 
     const userId = req.user._id
-    const { name, price, image, qty, shop, productId, foodType, rating, discount,stock } = req.body || {}
+    const { name, price, image, qty, shop, productId, foodType, rating, discount, stock } = req.body || {}
     try {
         const cart = await Cart.findOne({ user: userId })
 
@@ -113,6 +113,28 @@ export const delateCartItem = async (req, res) => {
     } catch (error) {
         console.log("delate cart items error", error);
         return res.status(400).json({ success: false, message: "delate cart items error", error })
+
+    }
+}
+
+
+export const ClearAllCartItems = async (req, res) => {
+    const userId = req.user._id || {}
+
+    try {
+
+        const cart = await Cart.findOneAndUpdate(
+            { user: userId },
+            { $set: { items: [] } },
+            { new: true }
+        );
+        if (!cart) return res.status(404).json({ success: false, message: "Cart not found" });
+
+
+        return res.status(200).json({ success: true, message: "Cart Clear", cart })
+    } catch (error) {
+        console.log("delate cart items error", error);
+        return res.status(400).json({ success: false, message: "Clear cart items error", error })
 
     }
 }
