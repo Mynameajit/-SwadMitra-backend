@@ -19,7 +19,8 @@ export const setToken = async (user, res, statusCode, message) => {
         res.status(statusCode).json({
             success: true,
             message,
-            token
+            token,
+            user
         })
 
 
