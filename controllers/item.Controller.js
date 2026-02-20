@@ -1,214 +1,307 @@
-import Cart from "../models/cart.Models.js";
 import Item from "../models/items.Models.js";
 import Shop from "../models/shop.Models.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
-export const createItem = async (req, res) => {
 
+
+// ===========================  create Item ======================
+export const createItem = async (req, res) => {
     try {
         const userId = req.user._id;
-        const { name, price, description, category, stock, foodType, discount } = req.body;
+        const {
+            name,
+            originalPrice,
+            description,
+            category,
+            stock,
+            foodType,
+            discount,
+        } = req.body;
 
-        let image;
-        if (req.file) {
-            image = await uploadOnCloudinary(req.file.path);
+        if (!name || !originalPrice || !category || !foodType) {
+            return res.status(400).json({
+                success: false,
+                message: "Required fields missing",
+            });
         }
 
-        let validDiscount = Number(discount) || 0;
-        if (validDiscount < 0) validDiscount = 0;
-        if (validDiscount > 100) validDiscount = 100;
+        const shop = await Shop.findOne({ owner: userId });
+        if (!shop) {
+            return res.status(404).json({
+                success: false,
+                message: "Shop not found",
+            });
+        }
 
-        const shop = await Shop.findOne({ owner: userId }).populate("owner").populate({
-            path: "items",
-            options: { sort: { updatedAt: -1 } }
-        })
+        let imageUrl;
+        if (req.file) {
+            const uploaded = await uploadOnCloudinary(req.file.path);
+            imageUrl = uploaded?.secure_url || uploaded;
+        }
 
         const item = await Item.create({
             name,
-            image,
-            price,
+            image: imageUrl,
+            originalPrice,
             description,
             shop: shop._id,
             category,
             stock,
             foodType,
-            discount: validDiscount,
+            discount,
         });
-        shop.items.push(item)
-        await shop.save()
 
-        return res
-            .status(200)
-            .json({ success: true, message: "Item Created Successfully", shop });
+        shop.items.push(item._id);
+        await shop.save();
+
+        const updatedShop = await Shop.findById(shop._id).populate({
+            path: "items",
+            match: { isActive: true },
+            options: { sort: { createdAt: -1 } },
+        });
+
+        return res.status(201).json({
+            success: true,
+            message: "Item created successfully",
+            items: updatedShop.items,
+        });
     } catch (error) {
         console.log("create item error", error);
-        return res
-            .status(400)
-            .json({ success: false, message: "create item error", error });
+        return res.status(500).json({
+            success: false,
+            message: "Create item failed",
+        });
     }
 };
 
 
+
+// ===========================  update Item ======================
+
 export const updateItem = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    const userId = req.user._id;
+
+    const shop = await Shop.findOne({ owner: userId });
+    if (!shop) {
+      return res.status(404).json({
+        success: false,
+        message: "Shop not found",
+      });
+    }
+
+    const item = await Item.findOne({
+      _id: itemId,
+      shop: shop._id,
+      isActive: true,
+    });
+
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        message: "Item not found",
+      });
+    }
+
+    let imageUrl = item.image;
+
+    if (req.file) {
+      const uploaded = await uploadOnCloudinary(req.file.path);
+      imageUrl = uploaded?.secure_url || uploaded;
+    }
+
+    Object.assign(item, {
+      ...req.body,
+      image: imageUrl,
+    });
+
+    await item.save(); // 🔥 updatedAt auto update
+
+    return res.status(200).json({
+      success: true,
+      message: "Item updated successfully",
+      item, // 🔥 only updated item send
+    });
+  } catch (error) {
+    console.log("update item error", error);
+    return res.status(500).json({
+      success: false,
+      message: "Update item failed",
+    });
+  }
+};
+
+
+
+
+
+// ===========================  Delete Item ======================
+
+export const deleteItem = async (req, res) => {
     try {
-        const { name, price, description, category, stock, foodType, discount } = req.body;
-        const itemId = req.params.itemId;
+        const { itemId } = req.params;
         const userId = req.user._id;
 
-        // Check itemId
-        if (!itemId) {
-            return res.status(400).json({ success: false, message: "Item ID is required" });
+        const shop = await Shop.findOne({ owner: userId });
+        if (!shop) {
+            return res.status(404).json({ success: false, message: "Shop not found" });
         }
 
-        let image;
-        if (req.file) {
-            image = await uploadOnCloudinary(req.file.path);
-        }
-
-
-        let updateData = {
-            name,
-            price,
-            description,
-            category,
-            stock,
-            foodType,
-            image,
-        };
-
-        // Add discount logic (validate range)
-        if (discount !== undefined) {
-            let validDiscount = Number(discount) || 0;
-            if (validDiscount < 0) validDiscount = 0;
-            if (validDiscount > 100) validDiscount = 100;
-            updateData.discount = validDiscount;
-        }
-
-        const item = await Item.findByIdAndUpdate(itemId, updateData, {
-            new: true,
-            runValidators: true,
-        });
-
+        const item = await Item.findOneAndUpdate(
+            { _id: itemId, shop: shop._id },
+            { isActive: false },
+            { new: true }
+        );
 
         if (!item) {
             return res.status(404).json({ success: false, message: "Item not found" });
         }
 
-        const shop = await Shop.findOne({ owner: userId }).populate({
+        const updatedShop = await Shop.findById(shop._id).populate({
             path: "items",
-            options: { sort: { updatedAt: -1 } }
-        })
-        if (!shop) {
-            return res.status(404).json({ success: false, message: "Shop not found" });
-        }
+            match: { isActive: true },
+        });
 
         return res.status(200).json({
             success: true,
-            message: "Item Updated Successfully",
-            shop,
+            message: "Item disabled successfully",
+            items: updatedShop.items,
         });
-
     } catch (error) {
-        console.log("item update error", error);
-        return res.status(400).json({
+        console.log("delete item error", error);
+        return res.status(500).json({
             success: false,
-            message: "item update error",
-            error,
+            message: "Delete item failed",
         });
     }
 };
 
-export const deleteItem = async (req, res) => {
 
-    try {
-        const itemId = req.params.itemId
-        const userId = req.user._id
 
-        if (!itemId) {
-            return res.status(400).json({ success: false, message: "itemId is required" })
-        }
-        const item = await Item.findByIdAndDelete(itemId)
-        if (!item) {
-            return res.status(400).json({ success: false, message: "Item not found" })
-        }
-
-        const shop = await Shop.findOne({ owner: userId }).populate({
-            path: "items",
-            options: { sort: { updatedAt: -1 } }
-        })
-        if (!shop) {
-            return res.status(404).json({ success: false, message: "Shop not found" });
-        }
-
-        return res.status(200).json({ success: true, message: "Item Deleted Successfully", shop })
-
-    } catch (error) {
-        console.log("item delate error", error);
-        return res.status(400).json({ success: false, message: "item delate error", error })
-    }
-}
-
+// ===========================  get Item  by shopId ======================
 export const getItemByShopId = async (req, res) => {
     try {
-        const shopId = req.params.shopId
-        if (!shopId) {
-            return res.status(400).json({ success: false, message: "ShopId is required" })
-        }
-        const items = await Item.fi({ shop: shopId })
+        const { shopId } = req.params;
 
-        if (!items || items.length === 0) {
+        const items = await Item.find({
+            shop: shopId,
+            isActive: true,
+        }).sort({ createdAt: -1 });
+
+        if (!items.length) {
             return res.status(404).json({
                 success: false,
-                message: "No items found for this shop",
+                message: "No items found",
             });
         }
-        return res.status(200).json({ success: true, message: "Item fetched Successfully", items })
 
+        return res.status(200).json({
+            success: true,
+            message: "Items fetched successfully",
+            items,
+        });
     } catch (error) {
         console.log("get item error", error);
-        return res.status(400).json({ success: false, message: "get item error", error })
+        return res.status(500).json({
+            success: false,
+            message: "Get items failed",
+        });
     }
-}
+};
 
-export const getAllItems = async (req, res) => {
 
+// ===========================  get my items   ======================
+
+export const getMyItems = async (req, res) => {
     try {
-        const items = await Item.find({})
-        return res.status(200).json({ success: true, message: "All Items fetched Successfully", items })
+        const userId = req.user._id;
 
-    } catch (error) {
-        console.log("get all items error", error);
-        return res.status(400).json({ success: false, message: "get all items error", error })
-
-    }
-}
-
-
-export const grtItemsByCity = async (req, res) => {
-    const { city } = req.params || {}
-    if (!city) {
-        return res.status(400).json({ success: false, message: "City is required" })
-    }
-    try {
-        const shop = await Shop.find({
-            city: { $regex: new RegExp(`^${city}$`, "i") }
-        }).populate("items")
-
+        const shop = await Shop.findOne({ owner: userId });
         if (!shop) {
-            return res.status(400).json({ success: false, message: "Shop not found" })
+            return res.status(404).json({
+                success: false,
+                message: "Shop not found",
+            });
         }
-        const shopId = shop.map(((shop) => shop._id))
+
         const items = await Item.find({
-            shop: { $in: shopId }
-        })
-        return res.status(200).json({ success: true, message: "getItem By City  fetched Successfully", items })
+            shop: shop._id,
+            isActive: true,
+        }).sort({ createdAt: -1 });
+
+        return res.status(200).json({
+            success: true,
+            items,
+        });
+    } catch (error) {
+        console.log("getMyItems error", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch owner items",
+        });
+    }
+};
 
 
+
+
+// ===========================  get all     Item   ======================
+export const getAllItems = async (req, res) => {
+    try {
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 12;
+        const skip = (page - 1) * limit;
+
+        const totalItems = await Item.countDocuments({ isActive: true });
+
+        const items = await Item.find({ isActive: true })
+            .populate("shop", "name city")
+            .skip(skip)
+            .limit(limit)
+            .sort({ createdAt: -1 });
+
+        return res.status(200).json({
+            success: true,
+            items,
+            currentPage: page,
+            totalPage: Math.ceil(totalItems / limit),
+            totalItems,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Get all items failed",
+        });
+    }
+};
+
+
+
+export const getItemsByCity = async (req, res) => {
+    try {
+        const { city } = req.params;
+
+        const shops = await Shop.find({
+            city: { $regex: new RegExp(`^${city}$`, "i") },
+        });
+
+        const shopIds = shops.map((s) => s._id);
+
+        const items = await Item.find({
+            shop: { $in: shopIds },
+            isActive: true,
+        });
+
+        return res.status(200).json({
+            success: true,
+            items,
+        });
     } catch (error) {
         console.log("getItemsByCity error", error);
-        return res.status(400).json({ success: false, message: "getItemsByCity error", error })
-
+        return res.status(500).json({
+            success: false,
+            message: "Get items by city failed",
+        });
     }
-}
-
-
+};

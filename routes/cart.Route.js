@@ -1,14 +1,14 @@
 import express from "express"
-import { isAuthenticated } from "../middleware/AuthMiddleware.js"
-import { AddItemToCart, ClearAllCartItems, delateCartItem, getCartItems, updateCartItem } from "../controllers/cart.Controller.js"
+import { AddItemToCart, clearCart, delateCartItem, getCartItems, updateCartItem } from "../controllers/cart.Controller.js"
+import { isAuthenticatedUser } from "../middleware/isAuthenticatedUser.js"
 
 const router = express.Router()
 
-router.post("/add", isAuthenticated, AddItemToCart)
-router.get("/get", isAuthenticated, getCartItems)
-router.post("/update/:productId", isAuthenticated, updateCartItem)
-router.post("/delate/:productId", isAuthenticated, delateCartItem)
-router.post("/clear", isAuthenticated, ClearAllCartItems)
+router.post("/add", isAuthenticatedUser, AddItemToCart)
+router.get("/get", isAuthenticatedUser, getCartItems)
+router.patch("/update/:productId", isAuthenticatedUser, updateCartItem)
+router.delete("/delete/:productId", isAuthenticatedUser, delateCartItem)
+router.delete("/clear", isAuthenticatedUser, clearCart)
 
 
 export default router

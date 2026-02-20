@@ -1,78 +1,59 @@
 import mongoose from "mongoose";
 
-const addressSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true
-    },
-    mobile: {
-        type: Number,
-        required: true
-    },
-    city: {
-        type: String,
-        required: true
-    },
-    state: {
-        type: String,
-        required: true
-    },
-    pinCode: {
-        type: String,
-        required: true
-    },
-    buildingName: {
-        type: String,
-    },
-    landmark: {
-        type: String,
-    },
-
-    isLocation: {
-        type: String,
-        required: true
-    }
-
-})
-
-const userSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema(
+  {
     fullName: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
+      trim: true,
     },
+
     email: {
-        type: String,
-        required: true,
-        unique: true,
-        lowercase: true,
-        trim: true,
-
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
     },
+
+    mobile: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
     password: {
-        type: String,
-
+      type: String,
+      required: true,
     },
+
+    role: { 
+      type: String,
+      enum: ["user", "admin", "owner", "delivery"],
+      default: "user",
+    },
+
+    // 🔥 Dashboard approval flow ke liye MOST IMPORTANT
+    status: {
+      type: String,
+      enum: ["incomplete", "pending", "approved", "rejected", "blocked"],
+      default: "incomplete",
+    },
+
+    // Email verified ya nahi (simple true/false)
     isVerified: {
-        type: Boolean,
-        default: false,
-    },
-    otp: {
-        type: String,
-    },
-    otpExpiry: {
-        type: Date,
+      type: Boolean,
+      default: false,
     },
 
-    role: {
-        type: String,
-        enum: ['user', 'admin', 'owner', 'delivery'],
-        default: 'user'
+    // Admin soft control (block / unblock)
+    isActive: {
+      type: Boolean,
+      default: true,
     },
-    address: [addressSchema]
+  },
+  { timestamps: true }
+);
 
-
-
-}, { timestamps: true })
-
-const User = mongoose.model('User', userSchema)
+const User = mongoose.model("User", userSchema);
 export default User;

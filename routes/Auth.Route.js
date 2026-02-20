@@ -1,13 +1,16 @@
 
 import {Router} from 'express';
-import { Signin, Signout, SignUp } from '../controllers/Auth.Controller.js';
-import { isAuthenticated } from '../middleware/AuthMiddleware.js';
+import { getUser, Signin, Signout, SignUp } from '../controllers/Auth.Controller.js';
+import { isAuthenticatedUser } from '../middleware/isAuthenticatedUser.js';
+
 
 const router = Router();
 
+/* ================= CUSTOMER ================= */
 router.post('/signup', SignUp);
 router.post('/signin', Signin);
-router.post('/signout', Signout);
+router.get('/me', isAuthenticatedUser, getUser);
+router.post('/signout',isAuthenticatedUser, Signout);
 
 
 export default router;

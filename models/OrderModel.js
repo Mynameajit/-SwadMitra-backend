@@ -1,65 +1,107 @@
-import mongoose from "mongoose"
+import mongoose from "mongoose";
 
-const shopOrderItemsSchema = new mongoose.Schema({
+/* ================= SHOP ORDER ITEMS ================= */
+const shopOrderItemsSchema = new mongoose.Schema(
+  {
     item: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Item",
-        required: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Item",
+      required: true,
     },
-    price: {
-        type: Number,
 
-    },
-    qty: { type: Number },
-    name: { type: String }
+    name: { type: String, required: true },
 
+    price: { type: Number, required: true },
 
-}, { timestamps: true })
+    qty: { type: Number, required: true },
 
-const shopOrderSchema = new mongoose.Schema({
-    shop: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Shop",
-        required: true
-    },
-    owner: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
-    },
-    subTotal: {
-        type: Number,
+    total: { type: Number },
 
-    },
-    shopOrderItems: [shopOrderItemsSchema],
     status: {
-        type: String,
-        enum: ["Pending", "Accepted", "Preparing", "Out Of Delivery", "Delivered", "Cancelled"],
-        default: "Pending"
-    }
+      type: String,
+      enum: [
+        "Pending",
+        "Accepted",
+        "Preparing",
+        "Out For Delivery",
+        "Delivered",
+        "Cancelled",
+      ],
+      default: "Pending",
+    },
+  },
+  { timestamps: true }
+);
 
-}, { timestamps: true })
+/* ================= SHOP ORDER ================= */
+const shopOrderSchema = new mongoose.Schema(
+  {
+    shop: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Shop",
+      required: true,
+    },
 
-const OrderSchema = new mongoose.Schema({
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
+    subTotal: { type: Number },
+
+    shopOrderItems: [shopOrderItemsSchema],
+
+    // 🔥 Only this status matters
+    status: {
+      type: String,
+      enum: [
+        "Pending",
+        "Accepted",
+        "Preparing",
+        "Out For Delivery",
+        "Delivered",
+        "Cancelled",
+      ],
+      default: "Pending",
+    },
+  },
+  { timestamps: true }
+);
+
+/* ================= MAIN ORDER ================= */
+const OrderSchema = new mongoose.Schema(
+  {
     user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
+
     paymentMethod: {
-        type: String,
-        enum: ["COD", "ONLINE"],
-        default: "COD"
+      type: String,
+      enum: ["COD", "ONLINE"],
+      default: "COD",
     },
+
+    paymentStatus: {
+      type: String,
+      enum: ["Pending", "Paid", "Failed"],
+      default: "Pending",
+    },
+
     deliveryAddress: {
-        type: Object,
-        required: true
+      type: Object,
+      required: true,
     },
+
+    totalAmount : { type: Number },
+    deliveryCharge: { type: Number },
     totalAmount: { type: Number },
-    shopOrders: [shopOrderSchema]
 
+    shopOrders: [shopOrderSchema],
+  },
+  { timestamps: true }
+);
 
-}, { timestamps: true })
-
-
-const Order = mongoose.model("Order", OrderSchema)
-export default Order
+const Order = mongoose.model("Order", OrderSchema);
+export default Order;

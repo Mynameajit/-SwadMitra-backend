@@ -1,17 +1,24 @@
 import { Router } from 'express';
-import { isAuthenticated } from '../middleware/AuthMiddleware.js';
-import {upload} from '../middleware/multer.js';
-import { createShop, deleteShop, getMyShop, getShopByCity, updateShop } from '../controllers/shop.Controller.js';
+import { upload } from '../middleware/multer.js';
+import { createShop, deleteShop, getMyShop, getShopByCity, toggleShopOpen, updateShop } from '../controllers/shop.Controller.js';
+import { isAuthenticatedDashboard } from '../middleware/isAuthenticatedDashboard.js';
 
 const router = Router();
 
-router.post('/create', isAuthenticated, upload.single("image"), createShop);
+router.post('/create', isAuthenticatedDashboard, upload.single("image"), createShop);
 
-router.put('/update/:shopId', isAuthenticated, upload.single("image"), updateShop);
+router.put('/update/:shopId', isAuthenticatedDashboard, upload.single("image"), updateShop);
 
-router.delete('/delete/:shopId', isAuthenticated, deleteShop);
+router.delete('/delete/:shopId', isAuthenticatedDashboard, deleteShop);
+/* Toggle Open / Close */
+router.patch(
+    "/toggle/:shopId",
+    isAuthenticatedDashboard,
+    toggleShopOpen
+);
+
 //get my shop
-router.get('/get', isAuthenticated, getMyShop);
-router.get('/getShop-by-city/:city', getShopByCity);
+router.get('/get', isAuthenticatedDashboard, getMyShop);
+router.get('/city/:city', getShopByCity);
 
 export default router;

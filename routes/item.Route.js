@@ -5,23 +5,64 @@ import {
   deleteItem,
   getAllItems,
   getItemByShopId,
-  grtItemsByCity
+  getItemsByCity,
+  getMyItems,
 } from "../controllers/item.Controller.js";
-import { isAuthenticated } from "../middleware/AuthMiddleware.js";
 import { upload } from "../middleware/multer.js";
+import { isAuthenticatedDashboard } from "../middleware/isAuthenticatedDashboard.js";
 
 const router = express.Router();
 
-router.post('/create', isAuthenticated, upload.single("image"), createItem);
+/* ================= OWNER ROUTES ================= */
 
-router.put('/update/:itemId', isAuthenticated, upload.single("image"), updateItem);
+// Create item
+router.post(
+  "/create",
+  isAuthenticatedDashboard,
+  upload.single("image"),
+  createItem
+);
 
-router.delete('/delete/:itemId', isAuthenticated, deleteItem);
+// Update item
+router.put(
+  "/update/:itemId",
+  isAuthenticatedDashboard,
+  upload.single("image"),
+  updateItem
+);
 
-router.get('/get-by-id/:shopId', getItemByShopId);
+// Soft delete item
+router.delete(
+  "/delete/:itemId",
+  isAuthenticatedDashboard,
+  deleteItem
+);
 
-router.get('/get', getAllItems);
+// 🔥 Owner dashboard items
+router.get(
+  "/my-items",
+  isAuthenticatedDashboard,
+  getMyItems
+);
 
-router.get('/getItems-by-city/:city', grtItemsByCity);
+/* ================= PUBLIC ROUTES ================= */
+
+// Get items by shop
+router.get(
+  "/shop/:shopId",
+  getItemByShopId
+);
+
+// Get all items  (pagination)
+router.get(
+  "/",
+  getAllItems
+);
+
+// Get items by city
+router.get(
+  "/city/:city",
+  getItemsByCity
+);
 
 export default router;
