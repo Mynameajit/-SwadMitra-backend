@@ -94,7 +94,6 @@ const OrderSchema = new mongoose.Schema(
       required: true,
     },
 
-    totalAmount : { type: Number },
     deliveryCharge: { type: Number },
     totalAmount: { type: Number },
 

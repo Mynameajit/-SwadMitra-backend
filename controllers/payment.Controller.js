@@ -1,20 +1,23 @@
 import razorpay from "../config/razorpay.js"
+import crypto from "crypto"; 
 
 export const createOrder = async (req, res) => {
-
+    
     try {
         const { amount } = req.body || {}
+        console.log(amount);
 
         const option = {
-            amount: amount * 1000,
+            amount: amount * 100,
             currency: "INR",
             receipt: `receipt_${Date.now()}`
         }
-        const order = razorpay.orders.create(option)
+        const order = await razorpay.orders.create(option)
 
         res.status(200).json({
             success: true,
             order,
+
         });
 
     } catch (error) {

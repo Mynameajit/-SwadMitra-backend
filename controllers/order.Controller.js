@@ -9,7 +9,7 @@ import User from "../models/User.Models.js";
 
 export const placeOrder = async (req, res) => {
   try {
-    const { paymentMethod, deliveryAddress, cartItems } = req.body;
+    const { paymentMethod, deliveryAddress, cartItems, totalAmount } = req.body;
     const user = req.user;
 
     if (!cartItems || cartItems.length === 0) {
@@ -102,7 +102,7 @@ export const placeOrder = async (req, res) => {
     let discount = 0;
 
     // Example rule:
-    // If totalQty >= 5 → 10% discount
+    // If totalQty >= 5 → 10 % discount
     if (totalQty >= 5) {
       discount = Math.round(itemsTotal * 0.1);
     }
@@ -114,10 +114,6 @@ export const placeOrder = async (req, res) => {
     // =============================
 
     const deliveryCharge = discountedAmount > 599 ? 0 : 30;
-    const platformFee = 20;
-
-    const totalAmount =
-      discountedAmount + deliveryCharge + platformFee;
 
     // =============================
     // 🔥 CREATE ORDER
@@ -130,11 +126,7 @@ export const placeOrder = async (req, res) => {
         paymentMethod === "ONLINE" ? "Paid" : "Pending",
       deliveryAddress,
 
-      itemsTotal,
-      totalQty,
-      discount,
       deliveryCharge,
-      platformFee,
       totalAmount,
 
       shopOrders,
@@ -333,9 +325,17 @@ export const getUserOrders = async (req, res) => {
 ===================================================== */
 export const getOwnerOrders = async (req, res) => {
   try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 12;
+    const skip = (page - 1) * limit;
+    const totalItems = await Order.countDocuments({ isActive: true });
+
+
     const orders = await Order.find({
       "shopOrders.owner": req.user._id,
     })
+      .skip(skip)
+      .limit(limit)
       .sort({ createdAt: -1 })
       .populate("user", "fullName email mobile")
       .populate(

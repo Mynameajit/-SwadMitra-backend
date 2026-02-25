@@ -47,7 +47,7 @@ export const SignUp = async (req, res) => {
             email,
             mobile,
             password: hashedPassword,
-            // role → default "user"
+           userData:true,
             status: "approved", // 🔥 customer ko direct access
         });
 

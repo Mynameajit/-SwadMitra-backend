@@ -271,8 +271,7 @@ export const getShopByCity = async (req, res) => {
     const { city } = req.params;
 
     const shops = await Shop.find({
-      city: { $regex: new RegExp(`^${city}$`, "i") },
-      status: "approved",
+      city: { $regex: `^${city.trim()}$`, $options: "i" }, 
       isActive: true,
       isOpenNow: true,
     }).populate("items");
